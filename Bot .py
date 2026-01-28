@@ -5,12 +5,17 @@ import time
 
 TOKEN = '7685203704:AAEU1nEHTwZiQwzz6xm5ao2G9QdGm7zMEDE'
 GPLINK_URL = 'https://gplinks.co/EQpKYQH' 
+ADMIN_ID = 7443187680 # လူကြီးမင်းရဲ့ ID
 
 bot = telebot.TeleBot(TOKEN)
 user_usage = {}
+user_list = set() # User အရေအတွက် မှတ်ရန်
 
 @bot.message_handler(commands=['start'])
 def start(message):
+    user_id = message.from_user.id
+    user_list.add(user_id) # User အသစ်ဝင်လာတိုင်း စာရင်းသွင်းမည်
+    
     welcome_text = (
         "👋 **TikTok Downloader Bot မှ ကြိုဆိုပါတယ်!**\n\n"
         "🛠 **အသုံးပြုနည်း (User Guide)**\n"
@@ -24,21 +29,29 @@ def start(message):
     )
     bot.reply_to(message, welcome_text, parse_mode="Markdown")
 
+# Admin အတွက် User အရေအတွက် စစ်ရန် Command
+@bot.message_handler(commands=['stats'])
+def show_stats(message):
+    if message.from_user.id == ADMIN_ID:
+        total_users = len(user_list)
+        bot.reply_to(message, f"📊 **Bot အခြေအနေ အကျဉ်းချုပ်**\n\n👥 စုစုပေါင်းအသုံးပြုသူ: {total_users} ယောက်", parse_mode="Markdown")
+    else:
+        bot.reply_to(message, "❌ သင်သည် Admin မဟုတ်သဖြင့် ဤ Command ကို သုံးခွင့်မရှိပါ။")
+
 @bot.message_handler(func=lambda message: True)
 def handle_tt(message):
     user_id = message.from_user.id
     url = message.text
+    user_list.add(user_id)
+    
     if "tiktok.com" not in url: return
 
     if user_id not in user_usage:
         user_usage[user_id] = 2
 
-    # အကြိမ်ရေကုန်သွားတဲ့ အခြေအနေ
     if user_usage[user_id] <= 0:
         markup = types.InlineKeyboardMarkup()
-        # ပထမခလုတ် - ကြော်ညာကြည့်ရန်
         btn_ad = types.InlineKeyboardButton("🔓 VPN ဖွင့်ပြီး ကြော်ငြာကြည့်ရန်", url=GPLINK_URL)
-        # ဒုတိယခလုတ် - ကြည့်ပြီးကြောင်း အတည်ပြုရန်
         btn_check = types.InlineKeyboardButton("✅ ကြည့်ပြီးပါပြီ (Check)", callback_data="check_ad")
         markup.add(btn_ad)
         markup.add(btn_check)
@@ -47,13 +60,12 @@ def handle_tt(message):
             "⚠️ **အကြိမ်ရေ ကုန်ဆုံးသွားပါပြီ**\n\n"
             "✅ **အဆင့် (၁):** အပေါ်ကခလုတ်ကိုနှိပ်ပြီး ကြော်ညာကို အဆုံးထိကြည့်ပါ။\n"
             "✅ **အဆင့် (၂):** ပြီးလျှင် **'Check'** ခလုတ်ကို နှိပ်ပါ။\n"
-            "✅ **အဆင့် (၃):** Link ပြန်ပို့ပေးပါ။ ၅ ကြိမ် ထပ်ရပါပြီ။\n\n"
-            "🌐 **မှတ်ချက်:** လင့်မပွင့်ပါက **VPN (Singapore)** ဖွင့်ပေးပါရန် မေတ္တာရပ်ခံပါသည်။"
+            "✅ **အဆင့် (၃):** Link ပြန်ပို့ပေးပါ။ ၅ ကြိမ် ထပ်ရပါပြီ။"
         )
         bot.send_message(message.chat.id, ad_msg, reply_markup=markup, parse_mode="Markdown")
         return
 
-    status_msg = bot.reply_to(message, "⏳ ဗီဒီယိုကို ရှာဖွေနေပါသည်၊ ခဏစောင့်ပေးပါ...")
+    status_msg = bot.reply_to(message, "⏳ ဗီဒီယိုကို ရှာဖွေနေပါသည်...")
 
     try:
         api_url = f"https://www.tikwm.com/api/?url={url}"
@@ -62,25 +74,4 @@ def handle_tt(message):
         if res.get('data') and res['data'].get('play'):
             video_url = res['data']['play']
             user_usage[user_id] -= 1
-            caption = f"✅ ဒေါင်းလုဒ် အောင်မြင်ပါတယ်ဗျ။\n📊 လက်ကျန်: {user_usage[user_id]} ကြိမ်"
-            bot.send_video(message.chat.id, video_url, caption=caption)
-            bot.delete_message(message.chat.id, status_msg.message_id)
-        else:
-            bot.edit_message_text("❌ TikTok ဘက်မှ အချက်အလက် မရရှိနိုင်ပါ။ Link မှန်မမှန် ပြန်စစ်ပေးပါဗျ။", message.chat.id, status_msg.message_id)
-            
-    except Exception as e:
-        bot.edit_message_text("❌ လိုင်းမတည်ငြိမ်သဖြင့် ခဏနေမှ ပြန်စမ်းပေးပါဗျ။", message.chat.id, status_msg.message_id)
-
-# ခလုတ်နှိပ်တာကို စစ်ဆေးတဲ့အပိုင်း
-@bot.callback_query_handler(func=lambda call: call.data == "check_ad")
-def callback_check(call):
-    user_id = call.from_user.id
-    user_usage[user_id] = 5
-    bot.answer_callback_query(call.id, "🎉 အောင်မြင်ပါသည်! ၅ ကြိမ် ထပ်တိုးပေးလိုက်ပါပြီ။", show_alert=True)
-    bot.edit_message_text("✅ အကြိမ်ရေ တိုးပြီးပါပြီ။ Link ပြန်ပို့နိုင်ပါပြီဗျ။", call.message.chat.id, call.message.message_id)
-
-while True:
-    try:
-        bot.polling(none_stop=True, interval=0, timeout=20)
-    except Exception as e:
-        time.sleep(15)
+            caption = f"✅ ဒေါင်းလုဒ် အောင်မြင်ပါတယ်ဗျ။\n📊 လက်

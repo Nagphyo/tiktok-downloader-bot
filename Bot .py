@@ -2,10 +2,11 @@ import telebot
 import requests
 from telebot import types
 import time
+import os
 from flask import Flask
 from threading import Thread
 
-# --- Render Port Error မတက်အောင် Flask Server တည်ဆောက်ခြင်း ---
+# --- Render ရဲ့ Port Error ကို ဖြေရှင်းရန် Flask Server ---
 app = Flask('')
 
 @app.route('/')
@@ -13,17 +14,19 @@ def home():
     return "Bot is alive and running!"
 
 def run():
-    app.run(host='0.0.0.0', port=8080)
+    # Render အတွက် Port ကို အလိုအလျောက် ရှာဖွေစေခြင်း
+    port = int(os.environ.get('PORT', 8080))
+    app.run(host='0.0.0.0', port=port)
 
 def keep_alive():
     t = Thread(target=run)
     t.daemon = True
     t.start()
 
-# --- ပြင်ဆင်ရန် အပိုင်း (လူကြီးမင်းရဲ့ ID နဲ့ Token အမှန်များ) ---
+# --- အချက်အလက်များ (လူကြီးမင်းအတွက် အကုန်ဖြည့်ပြီးသား) ---
 TOKEN = '7685203704:AAEU1nEHTwZiQwzz6xm5ao2G9QdGm7zMEDE'
 GPLINK_URL = 'https://gplinks.co/EQpKYQH' 
-ADMIN_ID = 7878088171  # လူကြီးမင်းရဲ့ ID အမှန်ကို ထည့်ပေးထားပါတယ်
+ADMIN_ID = 7878088171  # လူကြီးမင်းရဲ့ ID အမှန်
 
 bot = telebot.TeleBot(TOKEN)
 user_usage = {}
@@ -52,6 +55,7 @@ def show_stats(message):
         total_users = len(user_list)
         bot.reply_to(message, f"📊 **Admin Panel**\n\n👥 စုစုပေါင်းအသုံးပြုသူ: {total_users} ယောက်", parse_mode="Markdown")
     else:
+        # Admin မဟုတ်ရင် စာပြန်မည့်ပုံစံ
         bot.reply_to(message, "❌ သင်သည် Admin မဟုတ်သဖြင့် ဤ Command ကို သုံးခွင့်မရှိပါ။")
 
 # --- TikTok Link Handling ---
@@ -61,7 +65,6 @@ def handle_tt(message):
     url = message.text
     user_list.add(user_id)
     
-    # Usage logic
     if user_id not in user_usage:
         user_usage[user_id] = 2
 
@@ -86,7 +89,7 @@ def handle_tt(message):
             bot.delete_message(message.chat.id, status_msg.message_id)
         else:
             bot.edit_message_text("❌ ဗီဒီယို ရှာမတွေ့ပါ။ Link ပြန်စစ်ပေးပါဗျ။", message.chat.id, status_msg.message_id)
-    except Exception:
+    except:
         bot.edit_message_text("❌ Server မအားသေးလို့ ခဏနေမှ ပြန်စမ်းပေးပါဗျ။", message.chat.id, status_msg.message_id)
 
 # --- Ad Check Callback ---
@@ -97,12 +100,12 @@ def callback_check(call):
     bot.answer_callback_query(call.id, "🎉 ၅ ကြိမ် ထပ်တိုးပေးလိုက်ပါပြီ!", show_alert=True)
     bot.edit_message_text("✅ အကြိမ်ရေ တိုးပြီးပါပြီ။ Link ပြန်ပို့နိုင်ပါပြီဗျ။", call.message.chat.id, call.message.message_id)
 
-# --- Bot အမြဲနိုးကြားစေရန် Loop ပတ်ခြင်း ---
+# --- Bot Start ---
 if __name__ == "__main__":
-    keep_alive()  # Render Port Error မတက်အောင် Server စတင်ခြင်း
+    keep_alive()  # Render Port Error ကို ဖြေရှင်းပေးမည့် Server ကို စတင်ခြင်း
     print("Bot is starting...")
     while True:
         try:
             bot.polling(none_stop=True, interval=0, timeout=20)
-        except Exception as e:
+        except Exception:
             time.sleep(15)

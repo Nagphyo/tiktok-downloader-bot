@@ -3,18 +3,20 @@ import requests
 from telebot import types
 import time
 
+# --- ပြင်ဆင်ရန် အပိုင်း ---
 TOKEN = '7685203704:AAEU1nEHTwZiQwzz6xm5ao2G9QdGm7zMEDE'
 GPLINK_URL = 'https://gplinks.co/EQpKYQH' 
-ADMIN_ID = 7443187680 # လူကြီးမင်းရဲ့ ID
+ADMIN_ID = 7443187680 # လူကြီးမင်းရဲ့ Telegram ID
+# ----------------------
 
 bot = telebot.TeleBot(TOKEN)
 user_usage = {}
-user_list = set() # User အရေအတွက် မှတ်ရန်
+user_list = set()
 
 @bot.message_handler(commands=['start'])
 def start(message):
     user_id = message.from_user.id
-    user_list.add(user_id) # User အသစ်ဝင်လာတိုင်း စာရင်းသွင်းမည်
+    user_list.add(user_id)
     
     welcome_text = (
         "👋 **TikTok Downloader Bot မှ ကြိုဆိုပါတယ်!**\n\n"
@@ -29,7 +31,6 @@ def start(message):
     )
     bot.reply_to(message, welcome_text, parse_mode="Markdown")
 
-# Admin အတွက် User အရေအတွက် စစ်ရန် Command
 @bot.message_handler(commands=['stats'])
 def show_stats(message):
     if message.from_user.id == ADMIN_ID:
@@ -74,4 +75,24 @@ def handle_tt(message):
         if res.get('data') and res['data'].get('play'):
             video_url = res['data']['play']
             user_usage[user_id] -= 1
-            caption = f"✅ ဒေါင်းလုဒ် အောင်မြင်ပါတယ်ဗျ။\n📊 လက်
+            caption = f"✅ ဒေါင်းလုဒ် အောင်မြင်ပါတယ်ဗျ။\n📊 လက်ကျန်: {user_usage[user_id]} ကြိမ်"
+            bot.send_video(message.chat.id, video_url, caption=caption)
+            bot.delete_message(message.chat.id, status_msg.message_id)
+        else:
+            bot.edit_message_text("❌ TikTok ဘက်မှ အချက်အလက် မရရှိနိုင်ပါ။ Link မှန်မမှန် ပြန်စစ်ပေးပါဗျ။", message.chat.id, status_msg.message_id)
+            
+    except Exception as e:
+        bot.edit_message_text("❌ လိုင်းမတည်ငြိမ်သဖြင့် ခဏနေမှ ပြန်စမ်းပေးပါဗျ။", message.chat.id, status_msg.message_id)
+
+@bot.callback_query_handler(func=lambda call: call.data == "check_ad")
+def callback_check(call):
+    user_id = call.from_user.id
+    user_usage[user_id] = 5
+    bot.answer_callback_query(call.id, "🎉 အောင်မြင်ပါသည်! ၅ ကြိမ် ထပ်တိုးပေးလိုက်ပါပြီ။", show_alert=True)
+    bot.edit_message_text("✅ အကြိမ်ရေ တိုးပြီးပါပြီ။ Link ပြန်ပို့နိုင်ပါပြီဗျ။", call.message.chat.id, call.message.message_id)
+
+while True:
+    try:
+        bot.polling(none_stop=True, interval=0, timeout=20)
+    except Exception as e:
+        time.sleep(15)

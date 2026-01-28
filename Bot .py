@@ -1,6 +1,7 @@
 import telebot
 import requests
 from telebot import types
+import time
 
 TOKEN = '7685203704:AAEU1nEHTwZiQwzz6xm5ao2G9QdGm7zMEDE'
 GPLINK_URL = 'https://gplinks.co/EQpKYQH' 
@@ -48,14 +49,31 @@ def handle_tt(message):
         user_usage[user_id] = 5
         return
 
+    # Loading message လေး ပြပေးခြင်း (Bot အလုပ်လုပ်နေမှန်း သိရအောင်)
+    status_msg = bot.reply_to(message, "⏳ ဗီဒီယိုကို ရှာဖွေနေပါသည်၊ ခဏစောင့်ပေးပါ...")
+
     try:
         api_url = f"https://www.tikwm.com/api/?url={url}"
-        res = requests.get(api_url).json()
-        video_url = res['data']['play']
-        user_usage[user_id] -= 1
-        caption = f"✅ ဒေါင်းလုဒ် အောင်မြင်ပါတယ်ဗျ။\n📊 လက်ကျန်: {user_usage[user_id]} ကြိမ်"
-        bot.send_video(message.chat.id, video_url, caption=caption)
-    except:
-        bot.send_message(message.chat.id, "❌ လိုင်းမတည်ငြိမ်သဖြင့် ခဏနေမှ ပြန်စမ်းပေးပါဗျ။")
+        # timeout=15 ထည့်ထားလို့ လိုင်းမကောင်းရင် ၁၅ စက္ကန့်ပဲ စောင့်ပြီး အလိုအလျောက် ပြန်ကြိုးစားမှာပါ
+        res = requests.get(api_url, timeout=15).json()
+        
+        if res.get('data') and res['data'].get('play'):
+            video_url = res['data']['play']
+            user_usage[user_id] -= 1
+            caption = f"✅ ဒေါင်းလုဒ် အောင်မြင်ပါတယ်ဗျ။\n📊 လက်ကျန်: {user_usage[user_id]} ကြိမ်"
+            bot.send_video(message.chat.id, video_url, caption=caption)
+            bot.delete_message(message.chat.id, status_msg.message_id)
+        else:
+            bot.edit_message_text("❌ TikTok ဘက်မှ အချက်အလက် မရရှိနိုင်ပါ။ Link မှန်မမှန် ပြန်စစ်ပေးပါဗျ။", message.chat.id, status_msg.message_id)
+            
+    except Exception as e:
+        print(f"Error: {e}")
+        bot.edit_message_text("❌ လိုင်းမတည်ငြိမ်သဖြင့် သို့မဟုတ် Server ခေတ္တအလုပ်များနေသဖြင့် ခဏနေမှ ပြန်စမ်းပေးပါဗျ။", message.chat.id, status_msg.message_id)
 
-bot.polling(none_stop=True)
+# Bot က အမြဲတမ်း ပြန်နိုးနေအောင် အောက်ကအတိုင်း ပတ်ခိုင်းပါမယ်
+while True:
+    try:
+        bot.polling(none_stop=True, interval=0, timeout=20)
+    except Exception as e:
+        print(f"Polling Error: {e}")
+        time.sleep(15)

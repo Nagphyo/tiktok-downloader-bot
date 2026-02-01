@@ -14,7 +14,7 @@ def home():
     return "✅ Bot is Online and Ready!"
 
 # လူကြီးမင်း၏ Bot အချက်အလက်များ
-TOKEN = '7685203704:AAEU1nEHTwZiQwzz6xm5ao2G9QdGm7zMEDE'
+TOKEN = '7685203704:AAEp_m-XOSi-SiRA0b9XrC-5HtGZZanLG0I'
 GPLINK_URL = 'https://gplinks.co/EQpKYQH' 
 ADMIN_ID = 7878088171 
 

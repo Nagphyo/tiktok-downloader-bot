@@ -13,8 +13,8 @@ bot_app = Flask('')
 def home():
     return "✅ Bot is Online and Ready!"
 
-# လူကြီးမင်း၏ Token အသစ်ကို ဤနေရာတွင် အစားထိုးထားပါသည်
-TOKEN = '7685203704:AAEp_m-XOSi-SiRA0b9XrC-5HtGZZanLG0' # Token အသစ် ထည့်သွင်းပြီး
+# လူကြီးမင်း၏ Bot အချက်အလက်များ
+TOKEN = '7685203704:AAEU1nEHTwZiQwzz6xm5ao2G9QdGm7zMEDE'
 GPLINK_URL = 'https://gplinks.co/EQpKYQH' 
 ADMIN_ID = 7878088171 
 
@@ -81,12 +81,15 @@ def callback_check(call):
 
 def run_bot():
     while True:
-        try: bot.polling(none_stop=True)
-        except: time.sleep(10)
+        try: 
+            bot.polling(none_stop=True, interval=0, timeout=20)
+        except Exception as e:
+            time.sleep(10)
 
 if __name__ == "__main__":
     t = Thread(target=run_bot)
     t.daemon = True
     t.start()
-    port = int(os.environ.get('PORT', 8080))
+    # Render အတွက် Port 10000 ကို အဓိကထား သုံးခိုင်းခြင်း
+    port = int(os.environ.get('PORT', 10000))
     bot_app.run(host='0.0.0.0', port=port)

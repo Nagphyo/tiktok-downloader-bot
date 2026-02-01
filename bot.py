@@ -6,7 +6,7 @@ import os
 from flask import Flask
 from threading import Thread
 
-# --- Render Web Server ---
+# --- Render Web Server (UptimeRobot အတွက်) ---
 bot_app = Flask('')
 
 @bot_app.route('/')
@@ -20,13 +20,10 @@ ADMIN_ID = 7878088171
 
 bot = telebot.TeleBot(TOKEN)
 user_usage = {}
-user_list = set()
 
 # --- Start Command ---
 @bot.message_handler(commands=['start'])
 def send_welcome(message):
-    user_id = message.from_user.id
-    user_list.add(user_id)
     welcome_msg = (
         "🌟 **TikTok Video Downloader မှ ကြိုဆိုပါတယ်!** 🌟\n\n"
         "Link ပေးပို့ရုံဖြင့် Watermark မပါသော ဗီဒီယိုများကို ရယူနိုင်ပါပြီ။\n\n"
@@ -38,12 +35,12 @@ def send_welcome(message):
 @bot.message_handler(func=lambda message: "tiktok.com" in message.text)
 def handle_tt(message):
     user_id = message.from_user.id
-    user_list.add(user_id)
     
     if user_id not in user_usage:
         user_usage[user_id] = 2 
 
     if user_usage[user_id] <= 0:
+        # VPN နှင့် Check နှိပ်ရန် ညွှန်ကြားချက်
         request_text = (
             "⚠️ **ဒေါင်းလုဒ်လုပ်ခွင့် အကြိမ်ရေ ကုန်ဆုံးသွားပါပြီ**\n\n"
             "Bot ကို ဆက်လက်အသုံးပြုနိုင်ရန် အောက်ပါအတိုင်း ကူညီပေးပါခင်ဗျာ -\n\n"
@@ -90,6 +87,5 @@ if __name__ == "__main__":
     t = Thread(target=run_bot)
     t.daemon = True
     t.start()
-    # Render အတွက် Port 10000 ကို အဓိကထား သုံးခိုင်းခြင်း
-    port = int(os.environ.get('PORT', 10000))
+    port = int(os.environ.get('PORT', 8080))
     bot_app.run(host='0.0.0.0', port=port)

@@ -3,10 +3,10 @@ import requests
 from telebot import types
 
 # ၁။ Bot နှင့် Channel အချက်အလက်များ
-TOKEN = "7685203704:AAEp_m-XOSi-SiRA0b9XrC-5HtGZZanLG0I" # Token အသစ်လဲထားလျှင် ဒီမှာ ပြန်ထည့်ပါ
+TOKEN = "7685203704:AAEEwolEBkEN7t2nCPT6b2IGy9heASzlDy8" # Token အသစ်လဲထားလျှင် ဒီမှာ ပြန်ထည့်ပါ
 bot = telebot.TeleBot(TOKEN)
 
-CHANNEL_ID = "@Ytt_dowww_bot"  
+CHANNEL_ID = "@titokvideodowloader"  
 CHANNEL_LINK = "https://t.me/titokvideodowloader"
 
 # ၂။ Channel Join မ Join စစ်ဆေးသည့် Function
@@ -49,4 +49,24 @@ def handle_tiktok(message):
         markup = types.InlineKeyboardMarkup()
         btn = types.InlineKeyboardButton("📢 Join Our Channel", url=CHANNEL_LINK)
         markup.add(btn)
-        bot.send_message(
+        bot.send_message(message.chat.id, "⚠️ ဗီဒီယိုဒေါင်းယူရန် Channel ကို အရင် Join ပေးပါ။ Join ပြီးမှ /start ကို ပြန်နှိပ်ပါ။", reply_markup=markup)
+        return
+
+    url = message.text
+    if "tiktok.com" in url:
+        sent_msg = bot.reply_to(message, "⏳ ဗီဒီယိုကို စစ်ဆေးနေပါတယ်၊ ခဏစောင့်ပေးပါ...")
+        try:
+            api_url = f"https://tikwm.com/api/?url={url}"
+            response = requests.get(api_url).json()
+            if response.get("code") == 0:
+                video_url = response['data']['play']
+                bot.send_video(message.chat.id, video_url, caption="✅ ဒေါင်းလုဒ်ဆွဲမှု အောင်မြင်ပါသည်။ \n\n@titokvideodowloader")
+                bot.delete_message(message.chat.id, sent_msg.message_id)
+            else:
+                bot.edit_message_text("❌ ဗီဒီယို ရှာမတွေ့ပါ။ Link မှန်မမှန် ပြန်စစ်ပေးပါ။", message.chat.id, sent_msg.message_id)
+        except Exception as e:
+            bot.edit_message_text(f"❌ အမှားအယွင်းတစ်ခု ဖြစ်ပေါ်ခဲ့ပါသည်- {str(e)}", message.chat.id, sent_msg.message_id)
+    else:
+        bot.reply_to(message, "💡 ကျေးဇူးပြု၍ TikTok Link တစ်ခု ပို့ပေးပါ။")
+
+bot.polling(none_stop=True)

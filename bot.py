@@ -1,77 +1,79 @@
 import telebot
 import requests
 from telebot import types
+import os
+from flask import Flask
+from threading import Thread
 
-# ၁။ Bot Token အသစ်နှင့် Channel အချက်အလက်များ
+# ၁။ Bot Token နှင့် Channel အချက်အလက်
 TOKEN = "7685203704:AAEEwolEBkEN7t2nCPT6b2IGy9heASzlDy8" 
 bot = telebot.TeleBot(TOKEN)
-
 CHANNEL_ID = "@titokvideodowloader"  
 CHANNEL_LINK = "https://t.me/titokvideodowloader"
 
-# ၂။ Channel Join မ Join စစ်ဆေးသည့် Function
+# ၂။ Render Port Error ကျော်ရန် Flask Server တည်ဆောက်ခြင်း
+app = Flask('')
+
+@app.route('/')
+def home():
+    return "Bot is running!"
+
+def run():
+    app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
+
+# ၃။ Channel Join စစ်ဆေးသည့် Function
 def check_sub(user_id):
     try:
         status = bot.get_chat_member(CHANNEL_ID, user_id).status
-        if status in ['member', 'administrator', 'creator']:
-            return True
-        return False
+        return status in ['member', 'administrator', 'creator']
     except:
         return False
 
-# ၃။ /start Command (အသုံးပြုနည်းနှင့် မေတ္တာရပ်ခံချက်စာသားများ)
+# ၄။ /start Command
 @bot.message_handler(commands=['start'])
 def start(message):
     start_text = (
-        "👋 မင်္ဂလာပါခင်ဗျာ! TikTok Video Downloader Bot မှ ကြိုဆိုပါတယ်။\n\n"
+        "👋 မင်္ဂလာပါ! TikTok Video Downloader Bot မှ ကြိုဆိုပါတယ်။\n\n"
         "📖 **Bot အသုံးပြုနည်း**\n"
-        "၁။ TikTok မှ မိမိဒေါင်းလုဒ်ဆွဲလိုသော ဗီဒီယို Link ကို Copy ယူပါ။\n"
-        "၂။ ၎င်း Link ကို ဤ Bot ထံသို့ ပို့ပေးပါ။\n"
-        "၃။ ခဏစောင့်ပြီးလျှင် Watermark မပါသော ဗီဒီယိုကို ရရှိပါမည်။\n\n"
+        "၁။ TikTok ဗီဒီယို Link ကို Copy ယူပါ။\n"
+        "၂။ ၎င်း Link ကို ဤ Bot ထံသို့ ပို့ပေးပါ။\n\n"
         "📢 **မေတ္တာရပ်ခံချက်**\n"
-        "ကျွန်ုပ်တို့၏ ဝန်ဆောင်မှုကို ဆက်လက်ထိန်းသိမ်းနိုင်ရန် အောက်ပါ Channel ကို အရင် Join ပေးဖို့ မေတ္တာရပ်ခံအပ်ပါသည်။\n\n"
-        "⚠️ **သတိပေးချက်**\n"
-        "Channel Join မထားပါက Bot ကို အသုံးပြု၍ ရမည်မဟုတ်ပါ။"
+        "ဝန်ဆောင်မှုကို ဆက်လက်ပေးနိုင်ရန် Channel ကို အရင် Join ပေးပါ။\n\n"
+        "⚠️ Channel Join မထားပါက သုံး၍မရပါ။"
     )
-    
     if check_sub(message.from_user.id):
-        bot.reply_to(message, f"{start_text}\n\n✅ သင်သည် Channel Join ထားပြီးဖြစ်၍ Link ပို့နိုင်ပါပြီ။")
+        bot.reply_to(message, f"{start_text}\n\n✅ Link ပို့နိုင်ပါပြီ။")
     else:
         markup = types.InlineKeyboardMarkup()
-        btn = types.InlineKeyboardButton("📢 Join Channel Here", url=CHANNEL_LINK)
-        markup.add(btn)
+        markup.add(types.InlineKeyboardButton("📢 Join Channel", url=CHANNEL_LINK))
         bot.send_message(message.chat.id, start_text, reply_markup=markup)
 
-# ၄။ TikTok Video Download လုပ်သည့် အပိုင်း
+# ၅။ Video Download လုပ်သည့်အပိုင်း
 @bot.message_handler(func=lambda message: True)
 def handle_tiktok(message):
-    # အမြဲတမ်း Join မ Join အရင်စစ်မည်
     if not check_sub(message.from_user.id):
         markup = types.InlineKeyboardMarkup()
-        btn = types.InlineKeyboardButton("📢 Join Our Channel", url=CHANNEL_LINK)
-        markup.add(btn)
-        bot.send_message(message.chat.id, "⚠️ ဗီဒီယိုဒေါင်းယူရန် Channel ကို အရင် Join ပေးပါ။ Join ပြီးမှ /start ကို ပြန်နှိပ်ပါ။", reply_markup=markup)
+        markup.add(types.InlineKeyboardButton("📢 Join Channel", url=CHANNEL_LINK))
+        bot.send_message(message.chat.id, "⚠️ Channel အရင် Join ပေးပါ။", reply_markup=markup)
         return
 
     url = message.text
     if "tiktok.com" in url:
-        sent_msg = bot.reply_to(message, "⏳ ဗီဒီယိုကို စစ်ဆေးနေပါတယ်၊ ခဏစောင့်ပေးပါ...")
-        
+        sent = bot.reply_to(message, "⏳ စစ်ဆေးနေပါတယ်...")
         try:
-            # TikTok API သို့ ချိတ်ဆက်ခြင်း
-            api_url = f"https://tikwm.com/api/?url={url}"
-            response = requests.get(api_url).json()
-            
-            if response.get("code") == 0:
-                video_url = response['data']['play']
-                bot.send_video(message.chat.id, video_url, caption="✅ ဒေါင်းလုဒ်ဆွဲမှု အောင်မြင်ပါသည်။ \n\n@titokvideodowloader")
-                bot.delete_message(message.chat.id, sent_msg.message_id)
+            res = requests.get(f"https://tikwm.com/api/?url={url}").json()
+            if res.get("code") == 0:
+                bot.send_video(message.chat.id, res['data']['play'], caption="✅ Done!\n@titokvideodowloader")
+                bot.delete_message(message.chat.id, sent.message_id)
             else:
-                bot.edit_message_text("❌ ဗီဒီယို ရှာမတွေ့ပါ။ Link မှန်မမှန် ပြန်စစ်ပေးပါ။", message.chat.id, sent_msg.message_id)
-        except Exception as e:
-            bot.edit_message_text(f"❌ အမှားအယွင်းတစ်ခု ဖြစ်ပေါ်ခဲ့ပါသည်- {str(e)}", message.chat.id, sent_msg.message_id)
+                bot.edit_message_text("❌ ဗီဒီယို ရှာမတွေ့ပါ။", message.chat.id, sent.message_id)
+        except:
+            bot.edit_message_text("❌ အမှားအယွင်း ဖြစ်သွားပါသည်။", message.chat.id, sent.message_id)
     else:
-        bot.reply_to(message, "💡 ကျေးဇူးပြု၍ TikTok Link တစ်ခု ပို့ပေးပါ။")
+        bot.reply_to(message, "💡 TikTok Link ပို့ပေးပါ။")
 
-# ၅။ Bot ကို စတင်နှိုးခြင်း
-bot.polling(none_stop=True)
+# ၆။ Bot နှင့် Server ကို တစ်ပြိုင်နက်နှိုးခြင်း
+if __name__ == "__main__":
+    t = Thread(target=run)
+    t.start()
+    bot.polling(none_stop=True)

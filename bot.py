@@ -2,8 +2,8 @@ import telebot
 import requests
 from telebot import types
 
-# ၁။ Bot နှင့် Channel အချက်အလက်များ
-TOKEN = "7685203704:AAEEwolEBkEN7t2nCPT6b2IGy9heASzlDy8" # Token အသစ်လဲထားလျှင် ဒီမှာ ပြန်ထည့်ပါ
+# ၁။ Bot Token အသစ်နှင့် Channel အချက်အလက်များ
+TOKEN = "7685203704:AAEEwolEBkEN7t2nCPT6b2IGy9heASzlDy8" 
 bot = telebot.TeleBot(TOKEN)
 
 CHANNEL_ID = "@titokvideodowloader"  
@@ -19,7 +19,7 @@ def check_sub(user_id):
     except:
         return False
 
-# ၃။ /start Command (စာသားအသစ် ပြင်ဆင်ထားသည်)
+# ၃။ /start Command (အသုံးပြုနည်းနှင့် မေတ္တာရပ်ခံချက်စာသားများ)
 @bot.message_handler(commands=['start'])
 def start(message):
     start_text = (
@@ -45,6 +45,7 @@ def start(message):
 # ၄။ TikTok Video Download လုပ်သည့် အပိုင်း
 @bot.message_handler(func=lambda message: True)
 def handle_tiktok(message):
+    # အမြဲတမ်း Join မ Join အရင်စစ်မည်
     if not check_sub(message.from_user.id):
         markup = types.InlineKeyboardMarkup()
         btn = types.InlineKeyboardButton("📢 Join Our Channel", url=CHANNEL_LINK)
@@ -55,9 +56,12 @@ def handle_tiktok(message):
     url = message.text
     if "tiktok.com" in url:
         sent_msg = bot.reply_to(message, "⏳ ဗီဒီယိုကို စစ်ဆေးနေပါတယ်၊ ခဏစောင့်ပေးပါ...")
+        
         try:
+            # TikTok API သို့ ချိတ်ဆက်ခြင်း
             api_url = f"https://tikwm.com/api/?url={url}"
             response = requests.get(api_url).json()
+            
             if response.get("code") == 0:
                 video_url = response['data']['play']
                 bot.send_video(message.chat.id, video_url, caption="✅ ဒေါင်းလုဒ်ဆွဲမှု အောင်မြင်ပါသည်။ \n\n@titokvideodowloader")
@@ -69,4 +73,5 @@ def handle_tiktok(message):
     else:
         bot.reply_to(message, "💡 ကျေးဇူးပြု၍ TikTok Link တစ်ခု ပို့ပေးပါ။")
 
+# ၅။ Bot ကို စတင်နှိုးခြင်း
 bot.polling(none_stop=True)

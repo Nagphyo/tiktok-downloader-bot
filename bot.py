@@ -4,7 +4,7 @@ from telebot import types
 # ၁။ Token နှင့် Channel အချက်အလက် (မမှားပါစေနဲ့)
 TOKEN = "7685203704:AAEp_m-XOSi-SiRA0b9XrC-5HtGZZanLG0I"
 bot = telebot.TeleBot(TOKEN)
-CHANNEL_ID = "@titokvideodowloader" 
+CHANNEL_ID = "@Ytt_dowww_bot" 
 CHANNEL_LINK = "https://t.me/titokvideodowloader"
 
 # ၂။ Channel Join မ Join စစ်ဆေးသည့် Function

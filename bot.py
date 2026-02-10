@@ -76,4 +76,5 @@ def handle_tiktok(message):
 if __name__ == "__main__":
     t = Thread(target=run)
     t.start()
-    bot.polling(none_stop=True)
+bot.polling(none_stop=True, timeout=60, long_polling_timeout=60)
+

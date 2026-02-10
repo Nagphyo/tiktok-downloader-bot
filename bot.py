@@ -72,9 +72,18 @@ def handle_tiktok(message):
     else:
         bot.reply_to(message, "💡 TikTok Link ပို့ပေးပါ။")
 
-# ၆။ Bot နှင့် Server ကို တစ်ပြိုင်နက်နှိုးခြင်း
+import time
 if __name__ == "__main__":
     t = Thread(target=run)
     t.start()
-bot.polling(none_stop=True, timeout=60, long_polling_timeout=60)
+
+
+# Bot ကို loop တစ်ခုထဲမှာ ပိတ်လှောင်ထားလိုက်တာပါ
+while True:
+    try:
+        print("Bot စတင်အလုပ်လုပ်နေပါပြီ...")
+        bot.polling(none_stop=True, timeout=60)
+    except Exception as e:
+        print(f"Error တက်သွားလို့ ၅ စက္ကန့်နေရင် ပြန်စပါမယ်: {e}")
+        time.sleep(5) # ၅ စက္ကန့်နားပြီး အလိုအလျောက် ပြန်နိုးပါမယ်
 

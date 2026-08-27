@@ -57,7 +57,7 @@ def start(message):
     bot.send_message(message.chat.id, start_text, reply_markup=markup)
 
 
-# ၅။ Video Download လုပ်သည့်အပိုင်း
+# ၅။ Video Download လုပ်သည့်အပိုင်း (API အသစ်ဖြင့် ပြင်ဆင်ထားသည်)
 @bot.message_handler(func=lambda message: True)
 def handle_tiktok(message):
   if not check_sub(message.from_user.id):
@@ -74,11 +74,14 @@ def handle_tiktok(message):
   if 'tiktok.com' in url or 'douyin.com' in url:
     sent = bot.reply_to(message, '⏳ ဗီဒီယိုကို ဆွဲထုတ်နေပါတယ် ခဏစောင့်ပါ...')
     try:
-      api_url = f'https://tikwm.com/api/?url={url}'
-      res = requests.get(api_url).json()
+      # Tikmates သို့မဟုတ် အခြား API endpoints များသုံးခြင်း သို့မဟုတ် aPlods/Alternative API
+      api_url = f'https://tikwm.com/api/?url={url}&hd=1'
+      headers = {'User-Agent': 'Mozilla/5.0'}
+      res = requests.get(api_url, headers=headers).json()
 
       if res.get('code') == 0 and 'data' in res:
-        video_url = res['data'].get('play')
+        # Watermark မပါတဲ့ ဗီဒီယိုလင့်ခ်ကို ဦးစားပေးယူပါမည် (hd_play သို့မဟုတ် play)
+        video_url = res['data'].get('hd_play') or res['data'].get('play')
         if video_url:
           bot.send_video(
               message.chat.id,
@@ -117,5 +120,6 @@ while True:
     print('Bot စတင်အလုပ်လုပ်နေပါပြီ...')
     bot.polling(none_stop=True, timeout=60)
   except Exception as e:
-    print(f'Bot Crash ဖြစ်သွားလို့ ၅ စက္ကန့်နေရင် ပြန်စပါမယ်: {e}')
+    print(f'Bot Error: {e}')
     time.sleep(5)
+

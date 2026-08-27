@@ -6,8 +6,8 @@ from flask import Flask
 import telebot
 from telebot import types
 
-# ၁။ Bot Token နှင့် Channel အချက်အလက်
-TOKEN = '7685203704:AAEEwolEBkEN7t2nCPT6b2IGy9heASzlDy8'
+# ၁။ Token အသစ်နှင့် Channel အချက်အလက်
+TOKEN = '7685203704:AAHJvrtKNMMC3fMHImGdq6Xj2mdb5__912U'
 bot = telebot.TeleBot(TOKEN)
 CHANNEL_ID = '@titokvideodowloader'
 CHANNEL_LINK = 'https://t.me/titokvideodowloader'
@@ -57,7 +57,7 @@ def start(message):
     bot.send_message(message.chat.id, start_text, reply_markup=markup)
 
 
-# ၅။ Video Download လုပ်သည့်အပိုင်း (API အသစ်ဖြင့် ပြင်ဆင်ထားသည်)
+# ၅။ Video Download လုပ်သည့်အပိုင်း
 @bot.message_handler(func=lambda message: True)
 def handle_tiktok(message):
   if not check_sub(message.from_user.id):
@@ -74,14 +74,12 @@ def handle_tiktok(message):
   if 'tiktok.com' in url or 'douyin.com' in url:
     sent = bot.reply_to(message, '⏳ ဗီဒီယိုကို ဆွဲထုတ်နေပါတယ် ခဏစောင့်ပါ...')
     try:
-      # Tikmates သို့မဟုတ် အခြား API endpoints များသုံးခြင်း သို့မဟုတ် aPlods/Alternative API
-      api_url = f'https://tikwm.com/api/?url={url}&hd=1'
+      api_url = f'https://tikwm.com/api/?url={url}'
       headers = {'User-Agent': 'Mozilla/5.0'}
       res = requests.get(api_url, headers=headers).json()
 
       if res.get('code') == 0 and 'data' in res:
-        # Watermark မပါတဲ့ ဗီဒီယိုလင့်ခ်ကို ဦးစားပေးယူပါမည် (hd_play သို့မဟုတ် play)
-        video_url = res['data'].get('hd_play') or res['data'].get('play')
+        video_url = res['data'].get('play')
         if video_url:
           bot.send_video(
               message.chat.id,
@@ -111,15 +109,10 @@ def handle_tiktok(message):
 
 
 if __name__ == '__main__':
+  # Flask Server ကို Background Thread ဖြင့် Run ခြင်း (UptimeRobot အတွက်)
   t = Thread(target=run)
   t.start()
 
-# Bot ကို loop တစ်ခုထဲမှာ ဆက်တိုက် Run ထားခြင်း
-while True:
-  try:
-    print('Bot စတင်အလုပ်လုပ်နေပါပြီ...')
-    bot.polling(none_stop=True, timeout=60)
-  except Exception as e:
-    print(f'Bot Error: {e}')
-    time.sleep(5)
-
+# Bot ကို နေရာတစ်ခုတည်းတွင် Error ကင်းရှင်းစွာ Run ခြင်း
+print('Bot စတင်အလုပ်လုပ်နေပါပြီ...')
+bot.infinity_polling(skip_pending=True)
